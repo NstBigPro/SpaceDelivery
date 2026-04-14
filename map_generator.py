@@ -47,7 +47,7 @@ def _generate_map(abstract_cluster_collection, galaxy, rng):
 def _populate_abstract_clusters(galaxy, abstract_cluster_collection, amount, rng):
     """Generates abstract cluster positions in a ring-like pattern"""
     for i in range(amount):
-        abstract_cluster_deviation = rng.gen() * galaxy.size / 3
+        abstract_cluster_deviation = rng.gen() * galaxy.size / 3 #to obtain ring-like pattern, we deviate from the ring with half the size of the galaxy by a factor of a third of the size of the galaxy
         abstract_cluster_phi = rng.gen() * 2 * math.pi
         abstract_cluster_r = abstract_cluster_deviation + galaxy.size /2
         abstract_cluster_x = abstract_cluster_r * math.cos(abstract_cluster_phi)
