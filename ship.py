@@ -11,6 +11,11 @@ class Ship(object):
         self.galaxy = galaxy
 
         self.collided = False
+
+        self.destination_x=0
+        self.destination_y=0
+
+
     @property
     def direction(self):
         return self.dir
@@ -56,4 +61,16 @@ def generate_ship_position(galaxy, rng):
     ship_y = ship_r * sin(ship_phi)
 
     return ship_x, ship_y
+
+def generate_destination_position(ship,galaxy,rng):
+    ship_phi = atan2(ship.y,ship.x)
+    dest_phi = rng.gen()*2*pi
+    if abs(dest_phi - ship_phi) < pi/2:
+        dest_phi += pi
+    dest_dev = rng.gen()*galaxy.size/10
+    dest_r = galaxy.size + dest_dev
+    dest_x = dest_r * cos(dest_phi)
+    dest_y = dest_r * sin(dest_phi)
+    return dest_x, dest_y
+
 
