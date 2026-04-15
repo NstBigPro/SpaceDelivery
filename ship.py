@@ -1,5 +1,5 @@
 # Implements the spaceship object
-from math import pi, sin, cos
+from math import pi, sin, cos, atan2, degrees
 
 THROTTLE_QUADRANTS = {"REVERSE":-0.25, "STATIONARY":0, "FORWARD_1":0.25, "FORWARD_2":0.5, "FORWARD_3":0.75, "FORWARD_4":1}
 class Ship(object):
@@ -7,7 +7,7 @@ class Ship(object):
         self.x = x
         self.y = y
         self._speed = 0
-        self.dir = 0
+        self.dir = degrees(atan2(-self.y, -self.x))
         self.galaxy = galaxy
 
         self.collided = False
