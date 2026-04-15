@@ -13,6 +13,7 @@ class SpaceDelivery:
 
         pygame.init()
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        self.surface = pygame.Surface((1920,1080))
         self.main_panel = pygame.image.load("assets/main-panel.png")
 
 
@@ -42,7 +43,7 @@ class SpaceDelivery:
                     screen_x=dist * cos(radians(angle+90)) + self.radar_offset_x
                     screen_y=self.radar_offset_y - dist * sin(radians(angle+90)) # add 90 so that 0 degrees is y axis
 
-                    self.screen.blit(self.asteroid_contact_image, (screen_x, screen_y))
+                    self.surface.blit(self.asteroid_contact_image, (screen_x, screen_y))
 
     def run_game(self):
         while True:
@@ -50,9 +51,10 @@ class SpaceDelivery:
                 if event.type == pygame.QUIT:
                     sys.exit()
 
-            self.screen.blit(self.main_panel, (0,0))
+            self.surface.blit(self.main_panel, (0,0))
 
             self.update_radar()
+            self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0,0))
             pygame.display.flip()
 
 
