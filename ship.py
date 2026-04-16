@@ -1,7 +1,7 @@
 # Implements the spaceship object
 from math import pi, sin, cos, atan2, degrees
 
-THROTTLE_QUADRANTS = {"REVERSE":-0.25, "STATIONARY":0, "FORWARD_1":0.25, "FORWARD_2":0.5, "FORWARD_3":0.75, "FORWARD_4":1}
+THROTTLE_QUADRANTS = {'REVERSE': -0.25, 'STATIONARY': 0, 'FORWARD_1': 0.33, 'FORWARD_2': 0.66, 'AFTERBURNER': 1}
 class Ship(object):
     def __init__(self, x, y, galaxy):
         self.x = x

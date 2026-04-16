@@ -13,11 +13,13 @@ class RandomNumberGenerator:
     """A basic RNG. Epoch time of object initialization is used as default seed"""
     def __init__(self, initial_seed=datetime.datetime.now().timestamp()):
         self.seed = initial_seed
-        random.seed(self.seed)
+
     def gen(self):
         """Generate a random number between 0 and 1"""
+        random.seed(self.seed)
         return random.random()
     def gen_int(self, *args):
+        random.seed(self.seed)
         """Generates a random integer based on upper bound (or both bounds if provided)"""
         if len(args) == 1:
             return random.randint(*args)
