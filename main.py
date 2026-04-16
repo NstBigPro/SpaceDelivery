@@ -1,19 +1,24 @@
 import pygame
 import sys
+import json
 
 import map_generator
-from asteroid import Asteroid
 from ship import *
 from galaxy import Galaxy
 
 from math import sqrt, pi, sin, cos, atan2, degrees, radians
 
+
+DEATH_CAUSES: dict[str, str] = {'ALIVE':'0', 'ASTEROID_COLLISION':'1'}
+
 class SpaceDelivery:
     def __init__(self):
 
         pygame.init()
+        pygame.mixer.init()
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.surface = pygame.Surface((1920,1080))
+        self.death_surface = pygame.Surface(self.screen.get_size())
         self.main_panel = pygame.image.load("assets/main_panel.png")
 
 
@@ -83,6 +88,14 @@ class SpaceDelivery:
 
         self.ship_turning_factor = pi/800
 
+        self.font = pygame.font.Font("assets/font.ttf", size=20)
+
+        self.cause_of_death = 'ALIVE'
+        with open("assets/death_msg.json",'r') as f:
+            self.death_messages = json.load(f)
+
+        self.death_theme = pygame.mixer.Sound("assets/ost_star_dust.wav")
+
         map_generator.generate_map(self.galaxy, self.rng)
 
         pygame.display.set_caption("Space Delivery")
@@ -137,7 +150,6 @@ class SpaceDelivery:
             elif self.throttle_quadrant == "STATIONARY":
                 self.throttle_quadrant = "REVERSE"
 
-        print(self.throttle_quadrant)
 
     def update_throttle(self):
         if self.throttle_quadrant == "REVERSE":
@@ -177,9 +189,14 @@ class SpaceDelivery:
         if self.has_started:
             if self.turning_left:
                 self.ship.direction += self.ship_turning_factor * sqrt(abs(self.ship.speed))
-                print("hi")
             if self.turning_right:
                 self.ship.direction -= self.ship_turning_factor * sqrt(abs(self.ship.speed))
+
+    def check_collisions(self):
+        for asteroid in self.galaxy.asteroids:
+            dist = sqrt((self.ship.x - asteroid.x)**2 +  (self.ship.y - asteroid.y)**2)
+            if dist < 1:
+                self.cause_of_death = 'ASTEROID_COLLISION'
 
     def _debug_plot(self):
         for asteroid in self.galaxy.asteroids:
@@ -195,6 +212,57 @@ class SpaceDelivery:
         screen_x = self.ship.destination_x/4 + 800
         screen_y = 400 - self.ship.destination_y/4
         self.surface.blit(self.fuel_indicator, (screen_x, screen_y))
+
+    def death(self):
+        print("hi")
+        death_time = pygame.time.get_ticks()
+        self.elapsed_time = death_time
+        if self.cause_of_death == 'ASTEROID_COLLISION':
+            while self.elapsed_time - death_time < 100:
+                self.death_surface.fill((255,0,0))
+                self.screen.blit(self.death_surface, (0,0))
+                pygame.display.flip()
+                self.elapsed_time = pygame.time.get_ticks()
+            self.death_surface.fill((0, 0, 0))
+            self.screen.blit(self.death_surface, (0, 0))
+            pygame.display.flip()
+            while self.elapsed_time - death_time < 1500:
+                self.elapsed_time = pygame.time.get_ticks()
+            self.death_theme.play()
+            while 1500<=self.elapsed_time - death_time < 5500:
+                self.elapsed_time = pygame.time.get_ticks()
+                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][0], False, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.screen.get_width()//2, self.screen.get_height()//2))
+                self.death_surface.fill((0, 0, 0))
+                self.death_surface.blit(text, text_rect)
+                self.screen.blit(self.death_surface, (0, 0))
+                pygame.display.flip()
+            while 5500<=self.elapsed_time - death_time < 9500:
+                self.elapsed_time = pygame.time.get_ticks()
+                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][1], False, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.screen.get_width()//2, self.screen.get_height()//2))
+                self.death_surface.fill((0, 0, 0))
+                self.death_surface.blit(text, text_rect)
+                self.screen.blit(self.death_surface, (0, 0))
+                pygame.display.flip()
+            while 9500<=self.elapsed_time - death_time < 13500:
+                self.elapsed_time = pygame.time.get_ticks()
+                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][2], False, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+                self.death_surface.fill((0, 0, 0))
+                self.death_surface.blit(text, text_rect)
+                self.screen.blit(self.death_surface, (0, 0))
+                pygame.display.flip()
+            while 13500<=self.elapsed_time - death_time < 17500:
+                self.elapsed_time = pygame.time.get_ticks()
+                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][3], False, (255, 255, 255))
+                text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+                self.death_surface.fill((0, 0, 0))
+                self.death_surface.blit(text, text_rect)
+                self.screen.blit(self.death_surface, (0, 0))
+                pygame.display.flip()
+            self.death_theme.stop()
+            self.__init__()
     def run_game(self):
         while True:
             for event in pygame.event.get():
@@ -219,7 +287,6 @@ class SpaceDelivery:
                     if self.start_top_left_corner_x <= mouse_x <= self.start_bottom_right_corner_x and self.start_top_left_corner_y <= mouse_y <= self.start_bottom_right_corner_y:
                         self.start_time = pygame.time.get_ticks()
 
-            self.surface.blit(self.main_panel, (0,0))
             self.elapsed_time = pygame.time.get_ticks()
             if self.elapsed_time - self.start_time > 1000 and not self.has_started and self.start_time >= 0:
                 self.l_engine_active = True
@@ -230,18 +297,22 @@ class SpaceDelivery:
             if self.elapsed_time - self.start_time > 4000 and not self.has_started and self.start_time >= 0:
                 self.has_started = True
 
-            self.update_radar()
-            self.update_navigator()
-            self.update_throttle()
-            self.update_fuel()
-            self.update_engine_indicators()
-            self.ship.update_position()
-            self.update_direction()
+            if self.cause_of_death == 'ALIVE':
+                self.surface.blit(self.main_panel, (0, 0))
+                self.update_radar()
+                self.update_navigator()
+                self.update_throttle()
+                self.update_fuel()
+                self.update_engine_indicators()
+                self.ship.update_position()
+                self.update_direction()
+                self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
+            else:
+                self.death()
+            #self._debug_plot()
 
+            self.check_collisions()
 
-            self._debug_plot()
-
-            self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0,0))
             pygame.display.flip()
 
 

@@ -10,7 +10,6 @@ class Ship(object):
         self.dir = atan2(-self.y, -self.x)
         self.galaxy = galaxy
 
-        self.collided = False
 
         self.destination_x=0
         self.destination_y=0
@@ -22,15 +21,9 @@ class Ship(object):
     @direction.setter
     def direction(self, value):
         self.dir = round(value % (2*pi),4)
-    def _check_collision(self):
-        for asteroid in self.galaxy.asteroids:
-            if (self.x - asteroid.x)**2 + (self.y - asteroid.y)**2 < 1:
-                self.collided = True
-                break
     def update_position(self):
-        if not self.collided:
-            self.x += self._speed * (cos(self.dir))
-            self.y += self._speed * (sin(self.dir))
+        self.x += self._speed * (cos(self.dir))
+        self.y += self._speed * (sin(self.dir))
 
     @property
     def speed(self):
