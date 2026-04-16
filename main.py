@@ -22,6 +22,9 @@ class SpaceDelivery:
         self.galaxy = Galaxy()
         self.ship_x, self.ship_y = generate_ship_position(self.galaxy,self.rng)
 
+        self.ship_x = 1000
+        self.ship_y = 0
+
         self.ship = Ship(self.ship_x, self.ship_y, self.galaxy)
 
 
@@ -74,19 +77,25 @@ class SpaceDelivery:
         self.has_started = False
         self.start_time = -1
         self.elapsed_time = pygame.time.get_ticks()
-        print(self.elapsed_time)
+
+        self.turning_left = False
+        self.turning_right = False
+
+        self.ship_turning_factor = pi/800
+
         map_generator.generate_map(self.galaxy, self.rng)
 
         pygame.display.set_caption("Space Delivery")
-
-        print(self.ship.destination_x, self.ship.destination_y, self.ship.x, self.ship.y)
     def update_navigator(self):
         if self.has_started:
+            dx = self.ship.destination_x - self.ship.x
+            dy = self.ship.destination_y - self.ship.y
             scale = 0.1 # derived from picture as radius of navigator is ~200pixels, and galaxy diameter is 2000
-            angle = atan2(-self.ship.y,-self.ship.x)
-            r = sqrt((self.ship.x-self.ship.destination_x)**2+(self.ship.y-self.ship.destination_y)**2) * scale
-            screen_x = r*cos(angle) + self.nav_offset_x
-            screen_y = r*sin(angle) + self.nav_offset_y
+            rad = atan2(dy,dx)
+            angle = (degrees(rad) - degrees(self.ship.direction)) % 360
+            dist = sqrt((self.ship.x-self.ship.destination_x)**2+(self.ship.y-self.ship.destination_y)**2) * scale
+            screen_x=dist * cos(radians(angle+90)) + self.nav_offset_x
+            screen_y=self.nav_offset_y - dist * sin(radians(angle+90))
             self.surface.blit(self.waypoint_image, (screen_x, screen_y)) #destination
             self.surface.blit(self.waypoint_image, (self.nav_offset_x, self.nav_offset_y)) # own ship
 
@@ -94,12 +103,13 @@ class SpaceDelivery:
         if self.has_started:
             for asteroid in self.galaxy.asteroids:
                 dist = sqrt((self.ship.x - asteroid.x)**2 +  (self.ship.y - asteroid.y)**2)
-                if  dist < 300:
+                if  dist < 100:
                     dx = asteroid.x-self.ship.x
                     dy = asteroid.y-self.ship.y
                     rad = atan2(dy,dx)  # calculate bearing
-                    angle = (degrees(rad) - self.ship.direction) % 360 # compare bearings to check if angle is within radar search cone
+                    angle = (degrees(rad) - degrees(self.ship.direction)) % 360 # compare bearings to check if angle is within radar search cone
                     if angle <= 45 or angle >= 315:
+                        dist *= 3
                         screen_x=dist * cos(radians(angle+90)) + self.radar_offset_x # add 90 so that 0 degrees is y-axis
                         screen_y=self.radar_offset_y - dist * sin(radians(angle+90)) # we subtract since range increases as y coord decreases
 
@@ -138,19 +148,53 @@ class SpaceDelivery:
             self.surface.blit(self.throttle_2, (self.throttle_offset_x,self.throttle_offset_y))
         if self.throttle_quadrant == "AFTERBURNER":
             self.surface.blit(self.throttle_a, (self.throttle_offset_x,self.throttle_offset_y))
-
+        if self.fuel >= 0:
+            self.ship.speed = THROTTLE_QUADRANTS[self.throttle_quadrant]
+        else:
+            self.ship.speed = 0
+            self.l_engine_active = False
+            self.r_engine_active = False
     def update_fuel(self):
         if self.has_started:
             screen_x=round(self.fuel * self.fuel_scale_factor + self.fuel_offset_x)
             self.surface.blit(self.fuel_indicator, (screen_x, self.fuel_offset_y_1))
             self.surface.blit(self.fuel_indicator, (screen_x, self.fuel_offset_y_2))
-
+        if self.throttle_quadrant == "REVERSE":
+           self.fuel -= 0.02
+        if self.throttle_quadrant == "FORWARD_1":
+            self.fuel -= 0.004
+        if self.throttle_quadrant == "FORWARD_2":
+            self.fuel -= 0.01
+        if self.throttle_quadrant == "AFTERBURNER":
+            self.fuel -= 0.1
     def update_engine_indicators(self):
         if self.l_engine_active:
             self.surface.blit(self.engine_indicator, (self.l_engine_offset_x, self.l_engine_offset_y))
         if self.r_engine_active:
             self.surface.blit(self.engine_indicator, (self.r_engine_offset_x, self.r_engine_offset_y))
 
+    def update_direction(self):
+        if self.has_started:
+            if self.turning_left:
+                self.ship.direction += self.ship_turning_factor * sqrt(abs(self.ship.speed))
+                print("hi")
+            if self.turning_right:
+                self.ship.direction -= self.ship_turning_factor * sqrt(abs(self.ship.speed))
+
+    def _debug_plot(self):
+        for asteroid in self.galaxy.asteroids:
+            screen_x = asteroid.x/4 + 800
+            screen_y = 400 - asteroid.y/4
+            self.surface.blit(self.asteroid_contact_image, (screen_x, screen_y))
+        screen_x = self.ship.x/4 + 800
+        screen_y = 400 - self.ship.y/4
+        self.surface.blit(self.waypoint_image, (screen_x, screen_y))
+        screen_x = (self.ship.x/4+10*cos(self.ship.direction)) + 800
+        screen_y = 400 - (self.ship.y/4+10*sin(self.ship.direction))
+        self.surface.blit(self.waypoint_image, (screen_x, screen_y))
+        screen_x = self.ship.destination_x/4 + 800
+        screen_y = 400 - self.ship.destination_y/4
+        self.surface.blit(self.fuel_indicator, (screen_x, screen_y))
     def run_game(self):
         while True:
             for event in pygame.event.get():
@@ -161,6 +205,15 @@ class SpaceDelivery:
                         self.increase_throttle()
                     if event.key == pygame.K_s:
                         self.decrease_throttle()
+                    if event.key == pygame.K_a:
+                        self.turning_left = True
+                    if event.key == pygame.K_d:
+                        self.turning_right = True
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_a:
+                        self.turning_left = False
+                    if event.key == pygame.K_d:
+                        self.turning_right = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     if self.start_top_left_corner_x <= mouse_x <= self.start_bottom_right_corner_x and self.start_top_left_corner_y <= mouse_y <= self.start_bottom_right_corner_y:
@@ -182,6 +235,12 @@ class SpaceDelivery:
             self.update_throttle()
             self.update_fuel()
             self.update_engine_indicators()
+            self.ship.update_position()
+            self.update_direction()
+
+
+            self._debug_plot()
+
             self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0,0))
             pygame.display.flip()
 

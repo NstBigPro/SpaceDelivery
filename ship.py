@@ -1,13 +1,13 @@
 # Implements the spaceship object
-from math import pi, sin, cos, atan2, degrees
+from math import pi, sin, cos, atan2, degrees, sqrt
 
-THROTTLE_QUADRANTS = {'REVERSE': -0.25, 'STATIONARY': 0, 'FORWARD_1': 0.33, 'FORWARD_2': 0.66, 'AFTERBURNER': 1}
+THROTTLE_QUADRANTS = {'REVERSE': -0.1, 'STATIONARY': 0, 'FORWARD_1': 0.1, 'FORWARD_2': 0.25, 'AFTERBURNER': 0.4}
 class Ship(object):
     def __init__(self, x, y, galaxy):
         self.x = x
         self.y = y
         self._speed = 0
-        self.dir = degrees(atan2(-self.y, -self.x))
+        self.dir = atan2(-self.y, -self.x)
         self.galaxy = galaxy
 
         self.collided = False
@@ -28,7 +28,6 @@ class Ship(object):
                 self.collided = True
                 break
     def update_position(self):
-        self._check_collision()
         if not self.collided:
             self.x += self._speed * (cos(self.dir))
             self.y += self._speed * (sin(self.dir))
@@ -39,19 +38,9 @@ class Ship(object):
     @speed.setter
     def speed(self, value):
         if type(value) == float:
-            self._speed = round((value % 10), 3)
-        if type(value) == str:
-            try:
-                self._speed = THROTTLE_QUADRANTS[value]
-            except KeyError:
-                self._speed = 0
+            self._speed = value
         if type(value) == int:
-            if value >= 10:
-                self._speed = 10
-            else:
-                self._speed = value
-        else:
-            self._speed = 0
+            self._speed = value
 
 def generate_ship_position(galaxy, rng):
     ship_dev = rng.gen() * galaxy.size/10
@@ -62,15 +51,21 @@ def generate_ship_position(galaxy, rng):
 
     return ship_x, ship_y
 
-def generate_destination_position(ship,galaxy,rng):
+def _try_new_position(ship,galaxy,rng):
+
     ship_phi = atan2(ship.y,ship.x)
     dest_phi = rng.gen()*2*pi
-    if abs(dest_phi - ship_phi) < pi/2:
-        dest_phi += pi
+    print(ship_phi - dest_phi)
     dest_dev = rng.gen()*galaxy.size/10
     dest_r = galaxy.size + dest_dev
     dest_x = dest_r * cos(dest_phi)
     dest_y = dest_r * sin(dest_phi)
+    return dest_x, dest_y
+
+def generate_destination_position(ship,galaxy,rng):
+    dest_x, dest_y = _try_new_position(ship,galaxy,rng)
+    while sqrt((ship.x-dest_x)**2 + (ship.y-dest_y)**2) < 1000:
+        dest_x, dest_y = _try_new_position(ship,galaxy,rng)
     return dest_x, dest_y
 
 

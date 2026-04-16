@@ -14,12 +14,11 @@ class RandomNumberGenerator:
     def __init__(self, initial_seed=datetime.datetime.now().timestamp()):
         self.seed = initial_seed
 
+        random.seed(self.seed)
     def gen(self):
         """Generate a random number between 0 and 1"""
-        random.seed(self.seed)
         return random.random()
     def gen_int(self, *args):
-        random.seed(self.seed)
         """Generates a random integer based on upper bound (or both bounds if provided)"""
         if len(args) == 1:
             return random.randint(*args)
@@ -33,8 +32,8 @@ class RandomNumberGenerator:
 def _generate_map(abstract_cluster_collection, galaxy, rng):
     """Populates the map with asteroids based on abstract clusters position"""
     for abstract_cluster in abstract_cluster_collection:
-        size = rng.gen_int(2, 20)
-        amount = rng.gen_int(10, 100)
+        size = rng.gen_int(2, 30)
+        amount = rng.gen_int(20, 100)
         cluster = Cluster()
         while len(cluster.asteroids) < amount:
             asteroid_r = rng.gen() * size
