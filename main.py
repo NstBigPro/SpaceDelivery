@@ -3,6 +3,11 @@ import sys
 import json
 import datetime
 
+
+if sys.platform == "win32":
+    import ctypes
+    ctypes.windll.user32.SetProcessDPIAware()
+
 import map_generator
 from ship import *
 from galaxy import Galaxy
