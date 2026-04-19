@@ -3,7 +3,6 @@
 
 
 import random
-import datetime
 import math
 
 from asteroid import *
@@ -11,7 +10,7 @@ from galaxy import Galaxy
 
 class RandomNumberGenerator:
     """A basic RNG. Epoch time of object initialization is used as default seed"""
-    def __init__(self, initial_seed=datetime.datetime.now().timestamp()):
+    def __init__(self, initial_seed):
         self.seed = initial_seed
 
         random.seed(self.seed)

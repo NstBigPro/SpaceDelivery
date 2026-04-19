@@ -4,5 +4,29 @@
     "At the bottom-left screen you have a radar.",
     "You are travelling at inconceivable speeds.",
     "Your eyes can't warn you. Only the radar can."
+  ],
+  "2": [
+    "It seems you wandered too far away.",
+    "Space is vast, and the only way to get directions is through radio beacons.",
+    "Going too far from the beacons will shut down the navigation system.",
+    "There is a navigator in the top left screen. Follow it."
+  ],
+  "3": [
+    "You ran out of fuel.",
+    "No matter how powerful a fuel is, travelling so fast expends it quickly.",
+    "Limit the use of the afterburner. It consumes a lot of fuel.",
+    "Stay on course, and don't be impatient."
+  ],
+  "4": [
+    "Your engine exploded.",
+    "When passing an asteroid cloud, you could hit an engine.",
+    "Always use the radar on the bottom right.",
+    "And if things go wrong, extinguish it in time."
+  ],
+  "5": [
+    "Both your engines died.",
+    "If you hit multiple asteroids, you might destroy both engines.",
+    "This leaves you stranded and your systems off.",
+    "Always use the radar. It's the only thing that can warn you."
   ]
 }

@@ -1,15 +1,17 @@
 import pygame
 import sys
 import json
+import datetime
 
 import map_generator
 from ship import *
 from galaxy import Galaxy
-
+from random import random
 from math import sqrt, pi, sin, cos, atan2, degrees, radians
 
 
-DEATH_CAUSES: dict[str, str] = {'ALIVE':'0', 'ASTEROID_COLLISION':'1'}
+DEATH_CAUSES: dict[str, str] = {'ALIVE':'0', 'ASTEROID_COLLISION':'1', 'LEFT_MAP':'2', 'FUEL_DEPLETED':'3',
+                                'ENGINE_EXPLODED': '4', 'ENGINE_FAILURE': '5'}
 
 class SpaceDelivery:
     def __init__(self):
@@ -22,7 +24,7 @@ class SpaceDelivery:
         self.main_panel = pygame.image.load("assets/main_panel.png")
 
 
-        self.rng = map_generator.RandomNumberGenerator()
+        self.rng = map_generator.RandomNumberGenerator(datetime.datetime.now().timestamp())
 
         self.galaxy = Galaxy()
         self.ship_x, self.ship_y = generate_ship_position(self.galaxy,self.rng)
@@ -63,6 +65,10 @@ class SpaceDelivery:
         self.throttle_offset_y = 120
 
         self.engine_indicator = pygame.image.load("assets/engine_indicator.png")
+        self.fire_extinguish = pygame.image.load("assets/fire_button.png")
+
+        self.l_fire_indicator = pygame.image.load("assets/l_fire.png")
+        self.r_fire_indicator = pygame.image.load("assets/r_fire.png")
 
         self.l_engine_offset_x = 540
         self.l_engine_offset_y = 670
@@ -70,8 +76,30 @@ class SpaceDelivery:
         self.r_engine_offset_x = 540
         self.r_engine_offset_y = 740
 
+        self.l_engine_extinguish_offset_x = 1500
+        self.l_engine_extinguish_offset_y = 830
+
+        self.r_engine_extinguish_offset_x = 1760
+        self.r_engine_extinguish_offset_y = 830
+
+        self.l_engine_fire_offset_x = 1400
+        self.l_engine_fire_offset_y = 640
+
+        self.r_engine_fire_offset_x = 1690
+        self.r_engine_fire_offset_y = 640
+
         self.l_engine_active = False
         self.r_engine_active = False
+
+        self.l_engine_broken = False
+        self.r_engine_broken = False
+
+        self.l_engine_fire = False
+        self.l_engine_fire_time = -1
+        self.r_engine_fire = False
+        self.r_engine_fire_time = -1
+
+        self.failure_factor = 1
 
         self.start_top_left_corner_x = 850
         self.start_top_left_corner_y = 660
@@ -106,7 +134,9 @@ class SpaceDelivery:
             scale = 0.1 # derived from picture as radius of navigator is ~200pixels, and galaxy diameter is 2000
             rad = atan2(dy,dx)
             angle = (degrees(rad) - degrees(self.ship.direction)) % 360
-            dist = sqrt((self.ship.x-self.ship.destination_x)**2+(self.ship.y-self.ship.destination_y)**2) * scale
+            dist = sqrt((self.ship.x-self.ship.destination_x)**2+(self.ship.y-self.ship.destination_y)**2)
+            if dist > 2000: dist = 2000
+            dist *= scale
             screen_x=dist * cos(radians(angle+90)) + self.nav_offset_x
             screen_y=self.nav_offset_y - dist * sin(radians(angle+90))
             self.surface.blit(self.waypoint_image, (screen_x, screen_y)) #destination
@@ -161,29 +191,50 @@ class SpaceDelivery:
         if self.throttle_quadrant == "AFTERBURNER":
             self.surface.blit(self.throttle_a, (self.throttle_offset_x,self.throttle_offset_y))
         if self.fuel >= 0:
-            self.ship.speed = THROTTLE_QUADRANTS[self.throttle_quadrant]
+            self.ship.speed = THROTTLE_QUADRANTS[self.throttle_quadrant] * self.failure_factor
         else:
             self.ship.speed = 0
             self.l_engine_active = False
             self.r_engine_active = False
+            self.cause_of_death = 'FUEL_DEPLETED'
     def update_fuel(self):
         if self.has_started:
             screen_x=round(self.fuel * self.fuel_scale_factor + self.fuel_offset_x)
             self.surface.blit(self.fuel_indicator, (screen_x, self.fuel_offset_y_1))
             self.surface.blit(self.fuel_indicator, (screen_x, self.fuel_offset_y_2))
         if self.throttle_quadrant == "REVERSE":
-           self.fuel -= 0.02
+           self.fuel -= 0.02 * self.failure_factor
         if self.throttle_quadrant == "FORWARD_1":
-            self.fuel -= 0.004
+            self.fuel -= 0.004 * self.failure_factor
         if self.throttle_quadrant == "FORWARD_2":
-            self.fuel -= 0.01
+            self.fuel -= 0.01 * self.failure_factor
         if self.throttle_quadrant == "AFTERBURNER":
-            self.fuel -= 0.1
+            self.fuel -= 0.1 * self.failure_factor
     def update_engine_indicators(self):
         if self.l_engine_active:
             self.surface.blit(self.engine_indicator, (self.l_engine_offset_x, self.l_engine_offset_y))
         if self.r_engine_active:
             self.surface.blit(self.engine_indicator, (self.r_engine_offset_x, self.r_engine_offset_y))
+
+    def update_fire_indicators(self):
+        if self.l_engine_fire:
+            self.surface.blit(self.fire_extinguish, (self.l_engine_extinguish_offset_x, self.l_engine_extinguish_offset_y))
+            self.surface.blit(self.l_fire_indicator, (self.l_engine_fire_offset_x, self.l_engine_fire_offset_y))
+            self.failure_factor = 0.5
+        if self.r_engine_fire:
+            self.surface.blit(self.fire_extinguish, (self.r_engine_extinguish_offset_x, self.r_engine_extinguish_offset_y))
+            self.surface.blit(self.r_fire_indicator, (self.r_engine_fire_offset_x, self.r_engine_fire_offset_y))
+            self.failure_factor = 0.5
+
+    def extinguish_left_engine(self):
+        if self.l_engine_fire:
+            self.l_engine_active = False
+            self.l_engine_fire = False
+
+    def extinguish_right_engine(self):
+        if self.r_engine_fire:
+            self.r_engine_active = False
+            self.r_engine_fire = False
 
     def update_direction(self):
         if self.has_started:
@@ -196,7 +247,33 @@ class SpaceDelivery:
         for asteroid in self.galaxy.asteroids:
             dist = sqrt((self.ship.x - asteroid.x)**2 +  (self.ship.y - asteroid.y)**2)
             if dist < 1:
-                self.cause_of_death = 'ASTEROID_COLLISION'
+                failure = self.rng.gen_int(1,6)
+                if failure == 1:
+                    self.cause_of_death = 'ASTEROID_COLLISION'
+                elif self.l_engine_broken == False and(failure == 2 or failure == 3):
+                    self.l_engine_fire = True
+                    self.l_engine_broken = True
+                    self.l_engine_fire_time = pygame.time.get_ticks()
+                elif self.r_engine_broken == False and (failure == 4 or failure == 5):
+                    self.r_engine_fire = True
+                    self.r_engine_broken = True
+                    self.r_engine_fire_time = pygame.time.get_ticks()
+                del self.galaxy.asteroids[self.galaxy.asteroids.index(asteroid)]
+
+    def check_distance(self):
+        dist = sqrt(self.ship.x**2+self.ship.y**2)
+        if dist > 1200:
+            self.cause_of_death = 'LEFT_MAP'
+
+    def check_engine_explosion(self):
+        if self.l_engine_fire and pygame.time.get_ticks() - self.l_engine_fire_time > 3000:
+            self.cause_of_death = 'ENGINE_EXPLODED'
+        if self.r_engine_fire and pygame.time.get_ticks() - self.r_engine_fire_time > 3000:
+            self.cause_of_death = 'ENGINE_EXPLODED'
+
+    def check_engine_on(self):
+        if self.has_started and not self.l_engine_active and not self.r_engine_active:
+            self.cause_of_death = 'ENGINE_FAILURE'
 
     def _debug_plot(self):
         for asteroid in self.galaxy.asteroids:
@@ -214,55 +291,67 @@ class SpaceDelivery:
         self.surface.blit(self.fuel_indicator, (screen_x, screen_y))
 
     def death(self):
-        print("hi")
         death_time = pygame.time.get_ticks()
         self.elapsed_time = death_time
-        if self.cause_of_death == 'ASTEROID_COLLISION':
+        if self.cause_of_death == 'ASTEROID_COLLISION' or self.cause_of_death == 'ENGINE_EXPLODED':
             while self.elapsed_time - death_time < 100:
                 self.death_surface.fill((255,0,0))
                 self.screen.blit(self.death_surface, (0,0))
                 pygame.display.flip()
                 self.elapsed_time = pygame.time.get_ticks()
+        elif self.cause_of_death == 'LEFT_MAP' or self.cause_of_death == 'FUEL_DEPLETED' or self.cause_of_death == 'ENGINE_FAILURE':
+            pygame.display.flip()
+            self.has_started = False
+            self.surface.blit(self.main_panel, (0, 0))
+            self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
+        self.death_surface.fill((0, 0, 0))
+        if self.cause_of_death == 'ASTEROID_COLLISION' or self.cause_of_death == 'ENGINE_EXPLODED':
+            self.screen.blit(self.death_surface, (0, 0))
+        pygame.display.flip()
+        if self.cause_of_death in ['LEFT_MAP', 'FUEL_DEPLETED', 'ENGINE_FAILURE'] and self.elapsed_time - death_time < 1000:
+            self.screen.blit(self.death_surface, (0, 0))
+
+        while self.elapsed_time - death_time < 1500:
+            self.elapsed_time = pygame.time.get_ticks()
+        self.death_theme.play()
+        while 1500 <= self.elapsed_time - death_time < 5500:
+            self.elapsed_time = pygame.time.get_ticks()
+            text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][0], False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.death_surface.fill((0, 0, 0))
+            self.death_surface.blit(text, text_rect)
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
-            while self.elapsed_time - death_time < 1500:
-                self.elapsed_time = pygame.time.get_ticks()
-            self.death_theme.play()
-            while 1500<=self.elapsed_time - death_time < 5500:
-                self.elapsed_time = pygame.time.get_ticks()
-                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][0], False, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.screen.get_width()//2, self.screen.get_height()//2))
-                self.death_surface.fill((0, 0, 0))
-                self.death_surface.blit(text, text_rect)
-                self.screen.blit(self.death_surface, (0, 0))
-                pygame.display.flip()
-            while 5500<=self.elapsed_time - death_time < 9500:
-                self.elapsed_time = pygame.time.get_ticks()
-                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][1], False, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.screen.get_width()//2, self.screen.get_height()//2))
-                self.death_surface.fill((0, 0, 0))
-                self.death_surface.blit(text, text_rect)
-                self.screen.blit(self.death_surface, (0, 0))
-                pygame.display.flip()
-            while 9500<=self.elapsed_time - death_time < 13500:
-                self.elapsed_time = pygame.time.get_ticks()
-                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][2], False, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
-                self.death_surface.fill((0, 0, 0))
-                self.death_surface.blit(text, text_rect)
-                self.screen.blit(self.death_surface, (0, 0))
-                pygame.display.flip()
-            while 13500<=self.elapsed_time - death_time < 17500:
-                self.elapsed_time = pygame.time.get_ticks()
-                text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][3], False, (255, 255, 255))
-                text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
-                self.death_surface.fill((0, 0, 0))
-                self.death_surface.blit(text, text_rect)
-                self.screen.blit(self.death_surface, (0, 0))
-                pygame.display.flip()
-            self.death_theme.stop()
-            self.__init__()
+        while 5500 <= self.elapsed_time - death_time < 9500:
+            self.elapsed_time = pygame.time.get_ticks()
+            text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][1], False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.death_surface.fill((0, 0, 0))
+            self.death_surface.blit(text, text_rect)
+            self.screen.blit(self.death_surface, (0, 0))
+            pygame.display.flip()
+        while 9500 <= self.elapsed_time - death_time < 13500:
+            self.elapsed_time = pygame.time.get_ticks()
+            text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][2], False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.death_surface.fill((0, 0, 0))
+            self.death_surface.blit(text, text_rect)
+            self.screen.blit(self.death_surface, (0, 0))
+            pygame.display.flip()
+        while 13500 <= self.elapsed_time - death_time < 17500:
+            self.elapsed_time = pygame.time.get_ticks()
+            text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][3], False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.death_surface.fill((0, 0, 0))
+            self.death_surface.blit(text, text_rect)
+            self.screen.blit(self.death_surface, (0, 0))
+            pygame.display.flip()
+        self.death_theme.stop()
+        self.__init__()
     def run_game(self):
         while True:
             for event in pygame.event.get():
@@ -286,6 +375,10 @@ class SpaceDelivery:
                     mouse_x, mouse_y = pygame.mouse.get_pos()
                     if self.start_top_left_corner_x <= mouse_x <= self.start_bottom_right_corner_x and self.start_top_left_corner_y <= mouse_y <= self.start_bottom_right_corner_y:
                         self.start_time = pygame.time.get_ticks()
+                    if self.l_engine_extinguish_offset_x <= mouse_x <= self.l_engine_extinguish_offset_x + 60 and self.l_engine_extinguish_offset_y <= mouse_y <= self.l_engine_extinguish_offset_y + 60:
+                        self.extinguish_left_engine()
+                    if self.r_engine_extinguish_offset_x <= mouse_x <= self.r_engine_extinguish_offset_x + 60 and self.r_engine_extinguish_offset_y <= mouse_y <= self.r_engine_extinguish_offset_y + 60:
+                        self.extinguish_right_engine()
 
             self.elapsed_time = pygame.time.get_ticks()
             if self.elapsed_time - self.start_time > 1000 and not self.has_started and self.start_time >= 0:
@@ -306,10 +399,15 @@ class SpaceDelivery:
                 self.update_engine_indicators()
                 self.ship.update_position()
                 self.update_direction()
+                self.update_fire_indicators()
+                self.check_distance()
+                self.check_engine_on()
+                self.check_engine_explosion()
+                self._debug_plot()
                 self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
             else:
                 self.death()
-            #self._debug_plot()
+
 
             self.check_collisions()
 
