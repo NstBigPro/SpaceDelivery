@@ -403,7 +403,7 @@ class SpaceDelivery:
                 self.check_distance()
                 self.check_engine_on()
                 self.check_engine_explosion()
-                self._debug_plot()
+                #self._debug_plot()
                 self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
             else:
                 self.death()
