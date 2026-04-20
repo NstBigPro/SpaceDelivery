@@ -48,7 +48,6 @@ def _try_new_position(ship,galaxy,rng):
 
     ship_phi = atan2(ship.y,ship.x)
     dest_phi = rng.gen()*2*pi
-    print(ship_phi - dest_phi)
     dest_dev = rng.gen()*galaxy.size/10
     dest_r = galaxy.size + dest_dev
     dest_x = dest_r * cos(dest_phi)
