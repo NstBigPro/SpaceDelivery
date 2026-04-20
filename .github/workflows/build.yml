@@ -1,11 +1,11 @@
-name: Build win exe
+name: Build executables
 
 on:
   push:
   workflow_dispatch:
 
 jobs:
-  build:
+  windows-build:
     runs-on: windows-latest
 
     steps:
@@ -27,10 +27,10 @@ jobs:
 
     - name: Build exe
       run: |
-        pyinstaller --onefile --noconsole --name Space_Delivery_1.0.0-alpha1 --add-data "assets;assets" main.py
+        pyinstaller --onefile --noconsole --name Space_Delivery_1.0.0-alpha1-win --add-data "assets;assets" main.py
 
     - name: Upload exe
       uses: actions/upload-artifact@v4
       with:
-        name: Space_Delivery_1.0.0-alpha1
-        path: dist/Space_Delivery_1.0.0-alpha1
+        name: Space_Delivery_1.0.0-alpha1-win
+        path: dist/*.exe
