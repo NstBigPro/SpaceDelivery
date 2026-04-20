@@ -28,5 +28,11 @@
     "If you hit multiple asteroids, you might destroy both engines.",
     "This leaves you stranded and your systems off.",
     "Always use the radar. It's the only thing that can warn you."
+  ],
+  "6": [
+    "You dropped your cargo too early.",
+    "Anyway, the customers can track the delivery.",
+    "They will not be very satisfied, will they?",
+    "Don't play with any button, and only click the red ones when lit."
   ]
 }

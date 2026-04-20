@@ -16,7 +16,7 @@ from math import sqrt, pi, sin, cos, atan2, degrees, radians
 
 
 DEATH_CAUSES: dict[str, str] = {'ALIVE':'0', 'ASTEROID_COLLISION':'1', 'LEFT_MAP':'2', 'FUEL_DEPLETED':'3',
-                                'ENGINE_EXPLODED': '4', 'ENGINE_FAILURE': '5'}
+                                'ENGINE_EXPLODED': '4', 'ENGINE_FAILURE': '5', 'PREMATURE_CARGO': '6'}
 
 class SpaceDelivery:
     def __init__(self):
@@ -26,6 +26,7 @@ class SpaceDelivery:
         self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
         self.surface = pygame.Surface((1920,1080))
         self.death_surface = pygame.Surface(self.screen.get_size())
+        self.success_surface = pygame.Surface(self.screen.get_size())
         self.main_panel = pygame.image.load("assets/main_panel.png")
 
 
@@ -128,9 +129,12 @@ class SpaceDelivery:
 
         self.ship_turning_factor = pi/800
 
+        self.has_cargo = True
+
         self.font = pygame.font.Font("assets/font.ttf", size=20)
 
         self.cause_of_death = 'ALIVE'
+        self.success = False
         with open("assets/death_msg.json",'r') as f:
             self.death_messages = json.load(f)
 
@@ -256,11 +260,20 @@ class SpaceDelivery:
                 self.ship.direction -= self.ship_turning_factor * sqrt(abs(self.ship.speed))
 
     def update_cargo(self):
-        if self.has_started:
+        if self.has_started and self.has_cargo:
             self.surface.blit(self.engine_indicator, (self.cargo_offset_x, self.cargo_offset_y))
             dist = sqrt((self.ship.x-self.ship.destination_x) ** 2 + (self.ship.y-self.ship.destination_y) ** 2)
             if dist < 20:
                 self.surface.blit(self.cargo_button, (self.cargo_drop_offset_x,self.cargo_drop_offset_y))
+
+    def drop_cargo(self):
+        if self.has_started and self.has_cargo:
+            self.has_cargo = False
+            dist = dist = sqrt((self.ship.x-self.ship.destination_x) ** 2 + (self.ship.y-self.ship.destination_y) ** 2)
+            if dist > 20:
+                self.cause_of_death = 'PREMATURE_CARGO'
+            else:
+                self.success = True
 
     def check_collisions(self):
         for asteroid in self.galaxy.asteroids:
@@ -312,19 +325,19 @@ class SpaceDelivery:
     def death(self):
         death_time = pygame.time.get_ticks()
         self.elapsed_time = death_time
-        if self.cause_of_death == 'ASTEROID_COLLISION' or self.cause_of_death == 'ENGINE_EXPLODED':
+        if self.cause_of_death in ['ASTEROID_COLLISION', 'ENGINE_EXPLODED', 'PREMATURE_CARGO']:
             while self.elapsed_time - death_time < 100:
                 self.death_surface.fill((255,0,0))
                 self.screen.blit(self.death_surface, (0,0))
                 pygame.display.flip()
                 self.elapsed_time = pygame.time.get_ticks()
-        elif self.cause_of_death == 'LEFT_MAP' or self.cause_of_death == 'FUEL_DEPLETED' or self.cause_of_death == 'ENGINE_FAILURE':
+        elif self.cause_of_death in ['LEFT_MAP','FUEL_DEPLETED','ENGINE_FAILURE']:
             pygame.display.flip()
             self.has_started = False
             self.surface.blit(self.main_panel, (0, 0))
             self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
         self.death_surface.fill((0, 0, 0))
-        if self.cause_of_death == 'ASTEROID_COLLISION' or self.cause_of_death == 'ENGINE_EXPLODED':
+        if self.cause_of_death in ['ASTEROID_COLLISION', 'ENGINE_EXPLODED', 'PREMATURE_CARGO']:
             self.screen.blit(self.death_surface, (0, 0))
         pygame.display.flip()
         if self.cause_of_death in ['LEFT_MAP', 'FUEL_DEPLETED', 'ENGINE_FAILURE'] and self.elapsed_time - death_time < 1000:
@@ -371,6 +384,26 @@ class SpaceDelivery:
             pygame.display.flip()
         self.death_theme.stop()
         self.__init__()
+
+    def succeded(self):
+        pygame.display.flip()
+        success_time = pygame.time.get_ticks()
+        while pygame.time.get_ticks() - success_time < 5000:
+
+            self.success_surface.fill((0, 0, 0))
+            text = self.font.render("You did it!", False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
+            self.success_surface.blit(text, text_rect)
+            text = self.font.render(f"Restarting in {5-(round(pygame.time.get_ticks()-success_time)/1000)*1000} seconds", False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 30))
+            self.success_surface.blit(text, text_rect)
+            text = self.font.render("Press Q to quit.", False,
+                                    (255, 255, 255))
+            text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 60))
+            self.success_surface.blit(text, text_rect)
+
     def run_game(self):
         while True:
             for event in pygame.event.get():
@@ -398,7 +431,8 @@ class SpaceDelivery:
                         self.extinguish_left_engine()
                     if self.r_engine_extinguish_offset_x <= mouse_x <= self.r_engine_extinguish_offset_x + 60 and self.r_engine_extinguish_offset_y <= mouse_y <= self.r_engine_extinguish_offset_y + 60:
                         self.extinguish_right_engine()
-
+                    if self.cargo_drop_offset_x <= mouse_x <= self.cargo_drop_offset_x + 60 and self.cargo_drop_offset_y <= mouse_y <= self.cargo_drop_offset_y + 60:
+                        self.drop_cargo()
             self.elapsed_time = pygame.time.get_ticks()
             if self.elapsed_time - self.start_time > 1000 and not self.has_started and self.start_time >= 0:
                 self.l_engine_active = True
@@ -427,6 +461,9 @@ class SpaceDelivery:
                 self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
             else:
                 self.death()
+
+            if self.success:
+                self.succeded()
 
 
             self.check_collisions()
