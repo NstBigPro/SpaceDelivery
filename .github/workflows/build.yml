@@ -23,8 +23,7 @@ jobs:
 
     - name: Build exe
       run: |
-        pyinstaller --onefile --noconsole --name Space_Delivery_1.0.0-alpha1 ^
-        --add-data "assets;assets" main.py
+        pyinstaller --onefile --noconsole --name Space_Delivery_1.0.0-alpha1 --add-data "assets;assets" main.py
 
     - name: Upload exe
       uses: actions/upload-artifact@v4
