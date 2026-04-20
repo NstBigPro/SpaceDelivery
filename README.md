@@ -17,3 +17,8 @@ If not using prebuilt executables:
 - Run the `main.py` file.
 
 Since the game is still in development, ensure you frequently check for updates to stay in the latest version.
+
+## In-game controls
+- Throttle quadrant: Increase with `W`, decrease with `S`.
+- Steering: Left with `A`, right with `D`
+- Button click: Use mouse left click.
