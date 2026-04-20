@@ -33,4 +33,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: Space_Delivery_1.0.0-alpha1
-        path: Space_Delivery_1.0.0-alpha1
+        path: dist/Space_Delivery_1.0.0-alpha1
