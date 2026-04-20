@@ -272,14 +272,14 @@ class SpaceDelivery:
         if self.has_started and self.has_cargo:
             self.surface.blit(self.engine_indicator, (self.cargo_offset_x, self.cargo_offset_y))
             dist = sqrt((self.ship.x-self.ship.destination_x) ** 2 + (self.ship.y-self.ship.destination_y) ** 2)
-            if dist < 20:
+            if dist < 50:
                 self.surface.blit(self.cargo_button, (self.cargo_drop_offset_x,self.cargo_drop_offset_y))
 
     def drop_cargo(self):
         if self.has_started and self.has_cargo:
             self.has_cargo = False
             dist = dist = sqrt((self.ship.x-self.ship.destination_x) ** 2 + (self.ship.y-self.ship.destination_y) ** 2)
-            if dist > 20:
+            if dist > 50:
                 self.cause_of_death = 'PREMATURE_CARGO'
             else:
                 self.success = True
@@ -340,6 +340,11 @@ class SpaceDelivery:
                 self.screen.blit(self.death_surface, (0,0))
                 pygame.display.flip()
                 self.elapsed_time = pygame.time.get_ticks()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        sys.exit()
+                    if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                        sys.exit()
         elif self.cause_of_death in ['LEFT_MAP','FUEL_DEPLETED','ENGINE_FAILURE']:
             pygame.display.flip()
             self.has_started = False
@@ -354,6 +359,11 @@ class SpaceDelivery:
 
         while self.elapsed_time - death_time < 1500:
             self.elapsed_time = pygame.time.get_ticks()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
         self.death_theme.play()
         while 1500 <= self.elapsed_time - death_time < 5500:
             self.elapsed_time = pygame.time.get_ticks()
@@ -364,6 +374,11 @@ class SpaceDelivery:
             self.death_surface.blit(text, text_rect)
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
         while 5500 <= self.elapsed_time - death_time < 9500:
             self.elapsed_time = pygame.time.get_ticks()
             text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][1], False,
@@ -373,6 +388,11 @@ class SpaceDelivery:
             self.death_surface.blit(text, text_rect)
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
         while 9500 <= self.elapsed_time - death_time < 13500:
             self.elapsed_time = pygame.time.get_ticks()
             text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][2], False,
@@ -382,6 +402,11 @@ class SpaceDelivery:
             self.death_surface.blit(text, text_rect)
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
         while 13500 <= self.elapsed_time - death_time < 17500:
             self.elapsed_time = pygame.time.get_ticks()
             text = self.font.render(self.death_messages[DEATH_CAUSES[self.cause_of_death]][3], False,
@@ -391,20 +416,29 @@ class SpaceDelivery:
             self.death_surface.blit(text, text_rect)
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
         self.death_theme.stop()
         self.__init__()
 
-    def succeded(self):
+    def succeeded(self):
         pygame.display.flip()
         success_time = pygame.time.get_ticks()
         while pygame.time.get_ticks() - success_time < 5000:
-
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
+                    sys.exit()
             self.success_surface.fill((0, 0, 0))
             text = self.font.render("You did it!", False,
                                     (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.success_surface.blit(text, text_rect)
-            text = self.font.render(f"Restarting in {5-(round(pygame.time.get_ticks()-success_time)/1000)*1000} seconds", False,
+            text = self.font.render(f"Restarting in {5 - round((pygame.time.get_ticks()-success_time)/1000)} seconds", False,
                                     (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 30))
             self.success_surface.blit(text, text_rect)
@@ -412,6 +446,9 @@ class SpaceDelivery:
                                     (255, 255, 255))
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2 + 60))
             self.success_surface.blit(text, text_rect)
+            self.screen.blit(self.success_surface, (0,0))
+            pygame.display.flip()
+        self.__init__()
 
     def run_game(self):
         while True:
@@ -419,6 +456,8 @@ class SpaceDelivery:
                 if event.type == pygame.QUIT:
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:
+                        sys.exit()
                     if event.key == pygame.K_w:
                         self.increase_throttle()
                     if event.key == pygame.K_s:
@@ -452,7 +491,7 @@ class SpaceDelivery:
             if self.elapsed_time - self.start_time > 4000 and not self.has_started and self.start_time >= 0:
                 self.has_started = True
 
-            if self.cause_of_death == 'ALIVE':
+            if self.cause_of_death == 'ALIVE' and not self.success:
                 self.surface.blit(self.main_panel, (0, 0))
                 self.update_radar()
                 self.update_navigator()
@@ -469,10 +508,10 @@ class SpaceDelivery:
                 #self._debug_plot()
                 self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
             else:
-                self.death()
-
-            if self.success:
-                self.succeded()
+                if self.cause_of_death != 'ALIVE':
+                    self.death()
+                if self.success:
+                    self.succeeded()
 
 
             self.check_collisions()
