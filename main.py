@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 import json
 import datetime
 
@@ -18,6 +19,14 @@ from math import sqrt, pi, sin, cos, atan2, degrees, radians
 DEATH_CAUSES: dict[str, str] = {'ALIVE':'0', 'ASTEROID_COLLISION':'1', 'LEFT_MAP':'2', 'FUEL_DEPLETED':'3',
                                 'ENGINE_EXPLODED': '4', 'ENGINE_FAILURE': '5', 'PREMATURE_CARGO': '6'}
 
+def asset_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 class SpaceDelivery:
     def __init__(self):
 
@@ -27,7 +36,7 @@ class SpaceDelivery:
         self.surface = pygame.Surface((1920,1080))
         self.death_surface = pygame.Surface(self.screen.get_size())
         self.success_surface = pygame.Surface(self.screen.get_size())
-        self.main_panel = pygame.image.load("assets/main_panel.png")
+        self.main_panel = pygame.image.load(asset_path("assets/main_panel.png"))
 
 
         self.rng = map_generator.RandomNumberGenerator(datetime.datetime.now().timestamp())
@@ -43,9 +52,9 @@ class SpaceDelivery:
 
         self.ship.destination_x, self.ship.destination_y = generate_destination_position(self.ship,self.galaxy,self.rng)
 
-        self.asteroid_contact_image = pygame.image.load("assets/red_pixel.png")
-        self.waypoint_image = pygame.image.load("assets/blue_pixel.png")
-        self.fuel_indicator = pygame.image.load("assets/white_pixel.png")
+        self.asteroid_contact_image = pygame.image.load(asset_path("assets/red_pixel.png"))
+        self.waypoint_image = pygame.image.load(asset_path("assets/blue_pixel.png"))
+        self.fuel_indicator = pygame.image.load(asset_path("assets/white_pixel.png"))
         self.radar_offset_x=250
         self.radar_offset_y=945
 
@@ -62,20 +71,20 @@ class SpaceDelivery:
 
         self.throttle_quadrant = "STATIONARY"
 
-        self.throttle_r = pygame.image.load("assets/throttle_r.png")
-        self.throttle_1 = pygame.image.load("assets/throttle_1.png")
-        self.throttle_2 = pygame.image.load("assets/throttle_2.png")
-        self.throttle_a = pygame.image.load("assets/throttle_a.png")
+        self.throttle_r = pygame.image.load(asset_path("assets/throttle_r.png"))
+        self.throttle_1 = pygame.image.load(asset_path("assets/throttle_1.png"))
+        self.throttle_2 = pygame.image.load(asset_path("assets/throttle_2.png"))
+        self.throttle_a = pygame.image.load(asset_path("assets/throttle_a.png"))
 
         self.throttle_offset_x = 1400
         self.throttle_offset_y = 120
 
-        self.engine_indicator = pygame.image.load("assets/engine_indicator.png")
-        self.fire_extinguish = pygame.image.load("assets/fire_button.png")
-        self.cargo_button = pygame.image.load("assets/fire_button.png")
+        self.engine_indicator = pygame.image.load(asset_path("assets/engine_indicator.png"))
+        self.fire_extinguish = pygame.image.load(asset_path("assets/fire_button.png"))
+        self.cargo_button = pygame.image.load(asset_path("assets/fire_button.png"))
 
-        self.l_fire_indicator = pygame.image.load("assets/l_fire.png")
-        self.r_fire_indicator = pygame.image.load("assets/r_fire.png")
+        self.l_fire_indicator = pygame.image.load(asset_path("assets/l_fire.png"))
+        self.r_fire_indicator = pygame.image.load(asset_path("assets/r_fire.png"))
 
         self.l_engine_offset_x = 540
         self.l_engine_offset_y = 670
@@ -131,14 +140,14 @@ class SpaceDelivery:
 
         self.has_cargo = True
 
-        self.font = pygame.font.Font("assets/font.ttf", size=20)
+        self.font = pygame.font.Font(asset_path("assets/font.ttf"), size=20)
 
         self.cause_of_death = 'ALIVE'
         self.success = False
-        with open("assets/death_msg.json",'r') as f:
+        with open(asset_path("assets/death_msg.json"),'r') as f:
             self.death_messages = json.load(f)
 
-        self.death_theme = pygame.mixer.Sound("assets/ost_star_dust.wav")
+        self.death_theme = pygame.mixer.Sound(asset_path("assets/ost_star_dust.wav"))
 
         map_generator.generate_map(self.galaxy, self.rng)
 
