@@ -66,6 +66,7 @@ class SpaceDelivery:
 
         self.engine_indicator = pygame.image.load("assets/engine_indicator.png")
         self.fire_extinguish = pygame.image.load("assets/fire_button.png")
+        self.cargo_button = pygame.image.load("assets/fire_button.png")
 
         self.l_fire_indicator = pygame.image.load("assets/l_fire.png")
         self.r_fire_indicator = pygame.image.load("assets/r_fire.png")
@@ -85,7 +86,7 @@ class SpaceDelivery:
         self.l_engine_fire_offset_x = 1400
         self.l_engine_fire_offset_y = 640
 
-        self.r_engine_fire_offset_x = 1690
+        self.r_engine_fire_offset_x = 1670
         self.r_engine_fire_offset_y = 640
 
         self.l_engine_active = False
@@ -113,6 +114,12 @@ class SpaceDelivery:
 
         self.turning_left = False
         self.turning_right = False
+
+        self.cargo_offset_x = 540
+        self.cargo_offset_y = 870
+
+        self.cargo_drop_offset_x = 560
+        self.cargo_drop_offset_y = 970
 
         self.ship_turning_factor = pi/800
 
@@ -209,7 +216,7 @@ class SpaceDelivery:
         if self.throttle_quadrant == "FORWARD_2":
             self.fuel -= 0.01 * self.failure_factor
         if self.throttle_quadrant == "AFTERBURNER":
-            self.fuel -= 0.1 * self.failure_factor
+            self.fuel -= 0.3 * self.failure_factor
     def update_engine_indicators(self):
         if self.l_engine_active:
             self.surface.blit(self.engine_indicator, (self.l_engine_offset_x, self.l_engine_offset_y))
@@ -243,10 +250,17 @@ class SpaceDelivery:
             if self.turning_right:
                 self.ship.direction -= self.ship_turning_factor * sqrt(abs(self.ship.speed))
 
+    def update_cargo(self):
+        if self.has_started:
+            self.surface.blit(self.engine_indicator, (self.cargo_offset_x, self.cargo_offset_y))
+            dist = sqrt((self.ship.x-self.ship.destination_x) ** 2 + (self.ship.y-self.ship.destination_y) ** 2)
+            if dist < 20:
+                self.surface.blit(self.cargo_button, (self.cargo_drop_offset_x,self.cargo_drop_offset_y))
+
     def check_collisions(self):
         for asteroid in self.galaxy.asteroids:
             dist = sqrt((self.ship.x - asteroid.x)**2 +  (self.ship.y - asteroid.y)**2)
-            if dist < 1:
+            if dist < 2:
                 failure = self.rng.gen_int(1,6)
                 if failure == 1:
                     self.cause_of_death = 'ASTEROID_COLLISION'
@@ -272,7 +286,7 @@ class SpaceDelivery:
             self.cause_of_death = 'ENGINE_EXPLODED'
 
     def check_engine_on(self):
-        if self.has_started and not self.l_engine_active and not self.r_engine_active:
+        if self.has_started and self.l_engine_broken and self.r_engine_broken:
             self.cause_of_death = 'ENGINE_FAILURE'
 
     def _debug_plot(self):
@@ -400,6 +414,7 @@ class SpaceDelivery:
                 self.ship.update_position()
                 self.update_direction()
                 self.update_fire_indicators()
+                self.update_cargo()
                 self.check_distance()
                 self.check_engine_on()
                 self.check_engine_explosion()
