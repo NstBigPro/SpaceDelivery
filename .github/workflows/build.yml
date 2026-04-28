@@ -34,3 +34,34 @@ jobs:
       with:
         name: Space_Delivery_1.0.0-alpha1-win
         path: dist/*.exe
+
+
+  linux-build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Python installation
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.10"
+
+    - name: Install prerequisites
+      run: |
+        pip install -r requirements.txt
+
+    - name: Install pyinstaller
+      run: |
+        pip install pyinstaller
+
+    - name: Build binary
+      run: |
+        pyinstaller --onefile --noconsole --name Space_Delivery_1.0.0-alpha1-linux --add-data "assets:assets" main.py
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: Space_Delivery_1.0.0-alpha1-linux
+        path: dist/*
