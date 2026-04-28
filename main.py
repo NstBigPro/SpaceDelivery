@@ -52,6 +52,9 @@ class SpaceDelivery:
 
         self.ship.destination_x, self.ship.destination_y = generate_destination_position(self.ship,self.galaxy,self.rng)
 
+        self.stars = map_generator.generate_stars(self.rng)
+        self.star_image = pygame.image.load(asset_path("assets/star.png"))
+
         self.asteroid_contact_image = pygame.image.load(asset_path("assets/red_pixel.png"))
         self.waypoint_image = pygame.image.load(asset_path("assets/blue_pixel.png"))
         self.fuel_indicator = pygame.image.load(asset_path("assets/white_pixel.png"))
@@ -251,6 +254,14 @@ class SpaceDelivery:
             self.surface.blit(self.r_fire_indicator, (self.r_engine_fire_offset_x, self.r_engine_fire_offset_y))
             self.failure_factor = 0.5
 
+    def update_stars(self):
+        for star in self.stars:
+            star.update()
+            if 540<=star.x<=1380 and 10<=star.y<=620 and self.cause_of_death == "ALIVE":
+                self.surface.blit(self.star_image, (star.x,star.y))
+            elif self.cause_of_death != "ALIVE":
+                self.death_surface.blit(self.star_image, (star.x, star.y))
+
     def extinguish_left_engine(self):
         if self.l_engine_fire:
             self.l_engine_active = False
@@ -372,6 +383,7 @@ class SpaceDelivery:
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.death_surface.fill((0, 0, 0))
             self.death_surface.blit(text, text_rect)
+            self.update_stars()
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
             for event in pygame.event.get():
@@ -386,6 +398,7 @@ class SpaceDelivery:
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.death_surface.fill((0, 0, 0))
             self.death_surface.blit(text, text_rect)
+            self.update_stars()
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
             for event in pygame.event.get():
@@ -400,6 +413,7 @@ class SpaceDelivery:
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.death_surface.fill((0, 0, 0))
             self.death_surface.blit(text, text_rect)
+            self.update_stars()
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
             for event in pygame.event.get():
@@ -414,6 +428,7 @@ class SpaceDelivery:
             text_rect = text.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() // 2))
             self.death_surface.fill((0, 0, 0))
             self.death_surface.blit(text, text_rect)
+            self.update_stars()
             self.screen.blit(self.death_surface, (0, 0))
             pygame.display.flip()
             for event in pygame.event.get():
@@ -505,6 +520,7 @@ class SpaceDelivery:
                 self.check_distance()
                 self.check_engine_on()
                 self.check_engine_explosion()
+                self.update_stars()
                 #self._debug_plot()
                 self.screen.blit(pygame.transform.scale(self.surface, self.screen.get_size()), (0, 0))
             else:

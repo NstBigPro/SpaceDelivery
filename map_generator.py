@@ -7,6 +7,7 @@ import math
 
 from asteroid import *
 from galaxy import Galaxy
+from star import Star
 
 class RandomNumberGenerator:
     """A basic RNG. Epoch time of object initialization is used as default seed"""
@@ -55,6 +56,16 @@ def _populate_abstract_clusters(galaxy, abstract_cluster_collection, amount, rng
 
         abstract_cluster = AbstractCluster(abstract_cluster_x, abstract_cluster_y)
         abstract_cluster_collection.append(abstract_cluster)
+
+def generate_stars(rng: RandomNumberGenerator):
+    stars = []
+    amount = round(rng.gen() * 4 + 58)
+
+    for i in range(amount):
+        star_x = rng.gen_int(1,1920)
+        star_y = rng.gen_int(1,1080)
+        stars.append(Star(star_x,star_y,rng))
+    return stars
 
 def generate_map(galaxy: Galaxy, rng: RandomNumberGenerator) -> None:
     abstract_cluster_collection = []
